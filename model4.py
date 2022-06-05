@@ -23,7 +23,7 @@ class CRnet(nn.Module):
         self.Linear1 = nn.Linear(hidden_dim * 2, hidden_dim)
         self.Linear2 = nn.Linear(hidden_dim, output_size)
 
-        self.criterion = nn.L1Loss()
+        self.criterion = nn.MSELoss()
 
     def forward(self, t):
         # 一层卷积和池化
@@ -83,6 +83,7 @@ for i in range(50):
         lossal.append(loss.item())
         optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_value_(parameters=network.parameters(),clip_value=1.)
         optimizer.step()
 
 print(network.predict(x[2, :, :, :]))
