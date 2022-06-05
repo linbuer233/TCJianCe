@@ -52,16 +52,29 @@ class GRNN(nn.Module):
         self.Linear1 = nn.Linear(hidden_dim * 2, hidden_dim)
         self.Linear2 = nn.Linear(hidden_dim, output_size)
 
+        self.criterion = nn.CrossEntropyLoss()  # 定义交叉熵函数
+
     def forward(self, t):
         t, _ = self.gru(t)
-        # print('output:', t)
-        output = self.fc(t)
+        t = self.Linear1(t)
+        # t = torch.tanh(t)
+        output = self.Linear2(t)
 
         return output
 
     def init_zeros_state(self):
         init_hidden = torch.zeros(self.num_layers * 2, self.hidden_dim).to(device)
         return init_hidden
+
+    def predict(self, x):
+        pred = self.forward(x)
+        return pred
+
+    def getloss(self, x, y):
+        y_pred = self.forward(x)
+        loss = self.criterion(y_pred, y)  # 交叉熵计算误差
+        # loss=y-y_pred
+        return loss
 
 
 hidden_dim = 10
@@ -73,8 +86,19 @@ network = GRNN(2, hidden_dim, 2, num_layers)
 device = torch.device("cpu")
 network.to(device)
 
-a = torch.rand(1, 1, 2)
+x = torch.rand(10, 1, 2)
+y = x ** 2 + torch.rand(1)
+print(y[2, :, :])
+optimizer = torch.optim.Adam(network.parameters(), lr=0.005)
 
-potimizer = torch.optim.Adam(network.parameters(), lr=0.005)
+# print(network(a))
+lossal = []
+for i in range(5000):
+    for j in range(7):
+        loss = network.getloss(x[j, :, :], y[j, :, :])
+        lossal.append(loss.item())
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
-print(network(a))
+print(network.predict(x[2, :, :]))
