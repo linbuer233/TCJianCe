@@ -40,6 +40,8 @@ from torch import nn
 #         return t#.reshape(t.shape[:2])
 
 #继承nn.Module类，构建网络模型
+
+
 class LogicNet(nn.Module):
     def __init__(self,inputdim,hiddendim,outputdim):#初始化网络结构
         super(LogicNet,self).__init__()

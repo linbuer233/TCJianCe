@@ -84,11 +84,13 @@ network = GRNN(2, hidden_dim, 2, num_layers)
 # 指定设备
 device = torch.device("cpu")
 network.to(device)
+optimizer = torch.optim.Adam(network.parameters(), lr=0.005)
+
 
 x = torch.rand(100, 1, 2)
 y = 2 * x
 print(y[2, :, :])
-optimizer = torch.optim.Adam(network.parameters(), lr=0.005)
+
 
 # print(network(a))
 lossal = []
@@ -99,9 +101,9 @@ for i in range(50):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-    optimizer.zero_grad()
-    # loss.backward()
-    optimizer.step()
+    # optimizer.zero_grad()
+    # # loss.backward()
+    # optimizer.step()
 
 print(network.predict(x[2, :, :]))
 print(len(lossal))
