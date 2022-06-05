@@ -49,13 +49,12 @@ class GRNN(nn.Module):
                           hidden_size=hidden_dim,
                           num_layers=num_layers, bidirectional=True)
 
-        self.fc = nn.Linear(hidden_dim * 2, output_size)
+        self.Linear1 = nn.Linear(hidden_dim * 2, hidden_dim)
+        self.Linear2 = nn.Linear(hidden_dim, output_size)
 
     def forward(self, t):
         t, _ = self.gru(t)
-        print('output:', t)
-        # print(output.view(1, -1))
-        # t = t.reshape(t.shape[0], -1)
+        # print('output:', t)
         output = self.fc(t)
 
         return output
@@ -68,13 +67,13 @@ class GRNN(nn.Module):
 hidden_dim = 10
 num_layers = 1
 
-network = GRNN(12, hidden_dim, 12, num_layers)
+network = GRNN(2, hidden_dim, 2, num_layers)
 
 # 指定设备
 device = torch.device("cpu")
 network.to(device)
 
-a = torch.rand(1,1,12)
+a = torch.rand(1, 1, 2)
 
 potimizer = torch.optim.Adam(network.parameters(), lr=0.005)
 
