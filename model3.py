@@ -39,70 +39,55 @@ from torch import nn
 #
 #         return t#.reshape(t.shape[:2])
 
-class GRNN(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_size, num_layers):
-        super(GRNN, self).__init__()
-        self.num_layers = num_layers
-        self.hidden_dim = hidden_dim
+#继承nn.Module类，构建网络模型
+class LogicNet(nn.Module):
+    def __init__(self,inputdim,hiddendim,outputdim):#初始化网络结构
+        super(LogicNet,self).__init__()
+        self.Linear1 = nn.Linear(inputdim,hiddendim) #定义全连接层
+        self.Linear2 = nn.Linear(hiddendim,outputdim)#定义全连接层
+        self.criterion = nn.L1Loss() #定义交叉熵函数
 
-        self.gru = nn.GRU(input_size=input_dim,
-                          hidden_size=hidden_dim,
-                          num_layers=num_layers, bidirectional=True)
+    def forward(self,x): #搭建用两层全连接组成的网络模型
+        x = self.Linear1(x)#将输入数据传入第1层
+        x = torch.tanh(x)#对第一层的结果进行非线性变换
+        x = self.Linear2(x)#再将数据传入第2层
+#        print("LogicNet")
+        return x
 
-        self.Linear1 = nn.Linear(hidden_dim * 2, hidden_dim)
-        self.Linear2 = nn.Linear(hidden_dim, output_size)
-
-        self.criterion = nn.L1Loss()  # 定义损失函数
-
-    def forward(self, t):
-        t, _ = self.gru(t)
-        t = self.Linear1(t)
-        # t = torch.tanh(t)
-        output = self.Linear2(t)
-
-        return output
-
-    def init_zeros_state(self):
-        init_hidden = torch.zeros(self.num_layers * 2, self.hidden_dim).to(device)
-        return init_hidden
-
-    def predict(self, x):
+    def predict(self,x):#实现LogicNet类的预测接口
+        #调用自身网络模型，并对结果进行softmax处理,分别得出预测数据属于每一类的概率
         pred = self.forward(x)
-        return pred
+        return pred  #返回每组预测概率中最大的索引
 
-    def getloss(self, x, y):
+    def getloss(self,x,y): #实现LogicNet类的损失值计算接口
         y_pred = self.forward(x)
-        loss = self.criterion(y_pred, y)  # 交叉熵计算误差
+        loss = self.criterion(y_pred,y)#计算损失值得交叉熵
         return loss
 
 
-hidden_dim = 10
+hidden_dim = 100
 num_layers = 1
 
-network = GRNN(2, hidden_dim, 2, num_layers)
+network = LogicNet(2, hidden_dim, 2)
 
 # 指定设备
 device = torch.device("cpu")
 network.to(device)
 
-x = torch.rand(100, 1, 2)
+x = torch.rand(1000, 1, 2)
+a = torch.rand(1, 1, 2)
 y = 2 * x
 print(y[2, :, :])
 optimizer = torch.optim.Adam(network.parameters(), lr=0.005)
 
-# print(network(a))
+print(network(a).shape)
 lossal = []
-for i in range(50):
-    for j in range(100):
+for j in range(1000):
         loss = network.getloss(x[j, :, :], y[j, :, :])
         lossal.append(loss.item())
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-    optimizer.zero_grad()
-    # loss.backward()
-    optimizer.step()
-
 print(network.predict(x[2, :, :]))
 print(len(lossal))
 

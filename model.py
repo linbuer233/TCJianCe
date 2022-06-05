@@ -3,11 +3,6 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-
-# ds = xr.open_dataset('../data/all.nc')
-# print(ds)
-
-
 class Connet(nn.Module):
 
     def __init__(self):
