@@ -11,6 +11,7 @@ class CRnet(nn.Module):
         self.conv1 = nn.Conv2d(in_channels=input_dim, out_channels=12, kernel_size=3)
         self.conv2 = nn.Conv2d(in_channels=12, out_channels=6, kernel_size=3)
         self.conv3 = nn.Conv2d(in_channels=6, out_channels=2, kernel_size=3)
+        self.conv4 = nn.Conv2d(in_channels=4, out_channels=2, kernel_size=2)
 
         # RNN部分
         self.num_layers = num_layers
@@ -59,7 +60,7 @@ class CRnet(nn.Module):
 
     def getloss(self, x, y):
         y_pred = self.forward(x)
-        loss = self.criterion(y_pred, y)  # 交叉熵计算误差
+        loss = self.criterion(y_pred, y) # MSE计算误差
         return loss
 
 

@@ -1,6 +1,6 @@
 # 输入数据的形状（N，Cin，Hin，Win），输出的形状（N，Cout，Hout，Wout） 依次为，批次||通道||高||宽
-Hin = 81
-Win = 81
+Hin = 19
+Win = 19
 pad = [0,0]  # 补0操作，默认为0
 dilation = [1,1]  # 卷积核中每个元素的 间隔， 默认为 1
 kernel_size = [3, 3]  # 卷积核大小，h*w
