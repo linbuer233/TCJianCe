@@ -40,6 +40,7 @@ class CRnet(nn.Module):
         t = self.conv3(t)
         t = F.avg_pool2d(t, kernel_size=3, stride=4)
         # print('t:  ', t.shape)
+        # RNN
         t = t.reshape(1, 1, 2)
         t, _ = self.gru(t)
         t = self.Linear1(t)
@@ -83,7 +84,8 @@ for i in range(50):
         lossal.append(loss.item())
         optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_value_(parameters=network.parameters(),clip_value=1.)
+        # torch.nn.utils.clip_grad_value_(parameters=network.parameters(),clip_value=1.)
+        torch.nn.utils.clip_grad_norm_(network.parameters(), max_norm=1, norm_type=2)
         optimizer.step()
 
 print(network.predict(x[2, :, :, :]))
