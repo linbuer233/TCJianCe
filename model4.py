@@ -60,7 +60,7 @@ class CRnet(nn.Module):
 
     def getloss(self, x, y):
         y_pred = self.forward(x)
-        loss = self.criterion(y_pred, y) # MSE计算误差
+        loss = self.criterion(y_pred, y)  # MSE计算误差
         return loss
 
 

@@ -18,9 +18,15 @@ for year_i in year:
     df['速度'] = np.zeros(len(df))
     df['角度'] = np.zeros(len(df))
     for i in range(1, len(df), 1):
-        if i == 0:
+        # if i == 0:
+        #     continue
+        # if (df.loc[i - 1]['时间'] == 66666) or (df.loc[i]['时间'] == 66666):
+        #     continue
+        # df.loc[i, ['速度']] = [speed(df.loc[i - 1]['经度'], df.loc[i]['经度'], df.loc[i - 1]['纬度'], df.loc[i]['纬度'])]
+        # df.loc[i, ['角度']] = [jiao(df.loc[i - 1]['经度'], df.loc[i]['经度'], df.loc[i - 1]['纬度'], df.loc[i]['纬度'])]
+        if i == len(df) - 1:
+            break
+        if (df.loc[i + 1]['时间'] == 66666) or (df.loc[i]['时间'] == 66666):
             continue
-        if (df.loc[i - 1]['时间'] == 66666) or (df.loc[i]['时间'] == 66666):
-            continue
-        df.loc[i, ['速度']] = [speed(df.loc[i - 1]['经度'], df.loc[i]['经度'], df.loc[i - 1]['纬度'], df.loc[i - 1]['纬度'])]
-        df.loc[i, ['角度']] = [jiao(df.loc[i - 1]['经度'], df.loc[i]['经度'], df.loc[i - 1]['纬度'], df.loc[i]['纬度'])]
+        df.loc[i, ['速度']] = [speed(df.loc[i]['经度'], df.loc[i + 1]['经度'], df.loc[i]['纬度'], df.loc[i + 1]['纬度'])]
+        df.loc[i, ['角度']] = [jiao(df.loc[i]['经度'], df.loc[i + 1]['经度'], df.loc[i]['纬度'], df.loc[i + 1]['纬度'])]
