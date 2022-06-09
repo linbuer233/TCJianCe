@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-year = [2017, 2018, 2019, 2020]
+year = [2017, 2018, 2020]
 
 
 def speed(lon1, lon2, lat1, lat2):
@@ -16,17 +16,23 @@ def speed(lon1, lon2, lat1, lat2):
 def jiao(lon1, lon2, lat1, lat2):
     return np.round(np.arctan((lat2 - lat1) / (lon2 - lon1)), 2)
 
-#2017073106
+
+# 2017073106
 # 把时间间隔处理为6小时
 for year_i in year:
+    print(year_i)
     df1 = pd.read_csv(r'../data/CMATC7-8/CH' + str(year_i) + '.csv')
     df1 = df1.reset_index(drop=True)
+    print(df1)
     df = df1
     for i in range(len(df1)):
+        print(i)
+        # print(df.loc[i])
         if df1['时间'].loc[i] == 66666:
             continue
         if str(df1['时间'].loc[i])[-2:] in (['03', '09', '15', '21']):
             df = df.drop(i, axis=0)
+            continue
         if str(df1['时间'].loc[i])[6:8] in (['31']):
             df = df.drop(i, axis=0)
     df = df.reset_index(drop=True)

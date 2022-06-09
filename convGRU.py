@@ -215,7 +215,7 @@ if __name__ == '__main__':
     time_steps = 100  # 时间步长
     hid = model._init_hidden(1)
     input_tensor = torch.rand(batch_size, time_steps, channels, height, width)  # (b,t,c,h,w)
-    layer_output_list, last_state_list = model(input_tensor,hid)
+    layer_output_list, last_state_list = model(input_tensor, hid)
     input_tensor = torch.rand(batch_size, time_steps, channels, height, width)
     output_tensor = torch.rand(batch_size, time_steps, channels, height, width)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.005)
@@ -224,11 +224,11 @@ if __name__ == '__main__':
     print(layer_output_list[0].shape)
     print("------------------------------------------")
     print(last_state_list[0][0].shape)
-    a=input()
+    a = input()
     for i in range(50):
         hid = model._init_hidden(1)
         y_pred, hid = model(
-            input_tensor[0, :, :, :, :].reshape(batch_size, time_steps, channels, height, width),hidden_state=hid)
+            input_tensor[0, :, :, :, :].reshape(batch_size, time_steps, channels, height, width), hidden_state=hid)
         loss = cri(y_pred[0], output_tensor[0, :, :, :, :].reshape(batch_size, time_steps, channels, height, width))
         lossal.append(loss.item())
         optimizer.zero_grad()

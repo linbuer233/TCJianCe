@@ -3,7 +3,6 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-
 class Connet(nn.Module):
 
     def __init__(self):

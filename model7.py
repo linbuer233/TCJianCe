@@ -66,9 +66,9 @@ if __name__ == '__main__':
     dtype = torch.FloatTensor
     height = width = 21
     channels = 6  # 通道数
-    hidden_dim = [4, 2]  # 隐藏层纬度，后者是输出的纬度
+    hidden_dim = [8, 6, 1]  # 隐藏层纬度，后者是输出的纬度
     kernel_size = (3, 3)  # kernel size for two stacked hidden layer
-    num_layers = 2  # number of stacked hidden layer
+    num_layers = 3  # number of stacked hidden layer
     model = convGRU.ConvGRU(input_size=(height, width),
                             input_dim=channels,
                             hidden_dim=hidden_dim,
@@ -80,27 +80,27 @@ if __name__ == '__main__':
                             return_all_layers=False)
 
     # 确定优化器
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.02, weight_decay=0.01)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.002, weight_decay=0.001)
     # 定义损失函数
-    criterion = nn.MSELoss(reduction='mean')
+    criterion = nn.L1Loss()
     # 训练次数
-    ethches = 2
+    ethches = 20
+    # 指定设备
+    device = torch.device("cpu")
+    model.to(device)
     # 读取训练集
     trainds = xr.open_dataset('../data/x_train.nc')
     print(trainds)
     #
     batch_size = 1  # 样本批次
-    # time_steps = 100  # 时间步长
+    time_steps = 100  # 时间步长
     c2017 = name('../data/2017-2020_7-8/CH2017.csv')
     c2018 = name('../data/2017-2020_7-8/CH2018.csv')
     c2019 = name('../data/2017-2020_7-8/CH2019.csv')
+    c2020 = name('../data/2017-2020_7-8/CH2020.csv')
     trainname = [c2017, c2018, c2019]
-    # print(len(c2017),len(c2018)
-    # 指定设备
-    device = torch.device("cpu")
-    model.to(device)
 
-    # 训练阶段
+    # -----------------------------训练阶段------------------------------#
     lossal = []
     for i in range(ethches):
         for name_i, name_j in zip(range(2), ['2017', '2018']):
@@ -119,17 +119,19 @@ if __name__ == '__main__':
                 ytrain = ytrain[jiaoji(list((ytrain['经度'] > 103).values), list((ytrain['经度'] < 177).values))]
                 ytrain = ytrain[jiaoji(list((ytrain['纬度'] > -7).values), list((ytrain['纬度'] < 47).values))]
                 ytrain = ytrain[ytrain['强度'] > 1]
-                print("------------------------")
+
                 # 读取时间信息方便切割数据集
                 timelist = ytrain['时间'].reset_index(drop=True).values
                 # 读取中心经纬读
                 lat = ytrain['纬度'].reset_index(drop=True).values
                 lon = ytrain['经度'].reset_index(drop=True).values
-                # 风速和角度
-                ylabel = np.zeros((len(ytrain), 2))
-                ylabel[:, 0] = lat   # ytrain['速度']
-                ylabel[:, 1] = lon   # ytrain['角度']
-                # ylabel = torch.rand(len(ytrain), 2)
+                # 风速和角度    (弃用)
+                # ylabel = np.zeros((len(ytrain), 2))
+                # ylabel[:, 0] = lat  # ytrain['速度']
+                # ylabel[:, 1] = lon  # ytrain['角度']
+                ylabel = torch.zeros(len(ytrain), height, width)
+                ylabel[:,:,:] = -1
+                ylabel[:, 8:13, 8:13] = 1
                 # ------------------训练集-----------------------#
                 """
                 通过台风中心点选取周围的环境场，分辨率0.25°，故选取21*21的方格的数据，范围5°*5° 500km*500km左右
@@ -146,7 +148,6 @@ if __name__ == '__main__':
                     latend = lat_lon(lat[t_i]) - 2.5
                     lonst = lat_lon(lon[t_i]) - 2.5
                     lonend = lat_lon(lon[t_i]) + 2.5
-                    # 850hPa涡度
                     # 850hPa涡度
                     x_train[0, t_i, 0, :, :] = (trainds['vo'].loc[timedate,
                                                 latst:latend, lonst:lonend].data - np.nanmean(
@@ -178,43 +179,48 @@ if __name__ == '__main__':
                     x_train[0, t_i, 2:4, :, :] = (trainds['u'].loc[timedate, [200, 850], latst:latend,
                                                   lonst:lonend].data - np.nanmean(trainds['u'].loc[timedate, [200, 850],
                                                                                   latst:latend, lonst:lonend].data,
-                                                                                  axis=(1, 2)).reshape(2, 1, 1)) / \
+                                                                                  axis=(1, 2)).reshape((2, 1, 1))) / \
                                                  np.nanstd(trainds['u'].loc[timedate, [200, 850],
                                                            latst:latend,
                                                            lonst:lonend].data,
-                                                           axis=(1, 2)).reshape(2, 1, 1)
+                                                           axis=(1, 2)).reshape((2, 1, 1))
                     # V
                     x_train[0, t_i, 4:6, :, :] = (trainds['v'].loc[timedate, [200, 850],
                                                   latst:latend, lonst:lonend].data - np.nanmean(
                         trainds['v'].loc[timedate,
                         [200, 850],
                         latst:latend,
-                        lonst:lonend].data, axis=(1, 2)).reshape(2, 1, 1)) / np.nanstd(
+                        lonst:lonend].data, axis=(1, 2)).reshape((2, 1, 1))) / np.nanstd(
                         trainds['v'].loc[timedate, [200, 850],
                         latst:latend, lonst:lonend].data,
                         axis=(1, 2)).reshape(
                         2, 1,
                         1)
                     # x_train = np.where(x_train != np.nan, x_train, 0)
-                x_train = torch.rand((batch_size, len(ytrain), channels, 21, 21))
-                # print(x_train[0, -1, 0, :, :])
-                # a = input()
+
                 # ----------------------------开始训练---------------------------------#
                 # 设置基本参数
                 batch_size = 1  # 样本批次
                 time_steps = len(ytrain)  # 时间步长
                 # 把 xtrain和ylabel 转化为 tensor
-                # x_train = np.array(x_train)
-                # x_train = torch.Tensor(x_train)
+                x_train = np.array(x_train)
+                x_train = torch.Tensor(x_train)
                 ylabel = torch.Tensor(ylabel)
-                # lossal
+                # loss
                 hid = model._init_hidden(batch_size)
 
                 output, _ = model(x_train)
-                y_pred = output[0].nanmean(axis=(3, 4)).reshape(len(ytrain), 2)
+                y_pred = output[0].reshape(len(ytrain), height, width)
+                # y_pred = F.softmax(y_pred, dim=1).reshape(len(ytrain), height, width)
+                # y_pred = torch.where(y_pred > 0, 1, 0)
+                # y_pred=torch.FloatTensor(y_pred,device,requires_grad=True)
+                # print(y_pred[0, :, :])
+                # a = input()
                 loss = criterion(y_pred, ylabel)
-                print("loss: ", loss.item())
                 lossal.append(loss.item())
+                if len(lossal) % 10 == 0:
+                    print('-----------------------------------------------')
+                    print("loss: ", loss.item(), '进度', len(lossal), '/', ethches * (len(c2017) + len(c2018)))
                 optimizer.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_value_(parameters=model.parameters(), clip_value=1.)
@@ -241,8 +247,6 @@ if __name__ == '__main__':
     print(len(lossal))
     plt.plot(np.arange(0, len(lossal), 1), lossal)
     plt.show()
-    # print(output[0].shape)
     print("time:  ", time.time() - ts)
-    a = input()
-    # x_train=
-    # print("time:  ", time.time() - ts)
+    PATH = './taifennet.pth'
+    torch.save(model.state_dict(), PATH)
