@@ -1,4 +1,5 @@
 import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -89,8 +90,8 @@ if __name__ == '__main__':
     # testds = xr.open_dataset('../data/x_train.nc')
     testds = xr.open_dataset('../data/x_test.nc')
 
-    lossal=[]
-    er=[]
+    lossal = []
+    er = []
     tcname1 = []
     for i in c2020:
         # -------------------ylabel---------------------#
@@ -122,10 +123,10 @@ if __name__ == '__main__':
                                                                                        6:8] + 'T' + str(
                 timelist[t_i])[8:10]
             # 把经纬度的小数位设为 .25 整数倍
-            latst = lat_lon(lat1) + (width-1)/2*0.25
-            latend = lat_lon(lat1) - (width-1)/2*0.25
-            lonst = lat_lon(lon1) - (width-1)/2*0.25
-            lonend = lat_lon(lon1) + (width-1)/2*0.25
+            latst = lat_lon(lat1) + (width - 1) / 2 * 0.25
+            latend = lat_lon(lat1) - (width - 1) / 2 * 0.25
+            lonst = lat_lon(lon1) - (width - 1) / 2 * 0.25
+            lonend = lat_lon(lon1) + (width - 1) / 2 * 0.25
 
             # ------------------------------测试数据------------------------#
 
@@ -193,7 +194,7 @@ if __name__ == '__main__':
             lonlist = b[1]
             # print(latlist, lonlist)
             templat = templon = 0
-            print(timelist[t_i],i)
+            print(timelist[t_i], i)
             tcname1.append(i)
             # lat1=lat[t_i]
             # lon1=lon[t_i]
@@ -201,16 +202,16 @@ if __name__ == '__main__':
                 templat += lat1 - 2.5 + 0.25 * lat_i
                 templon += lon1 - 2.5 + 0.25 * lon_i
             try:
-                lat1=templat/len(latlist)
-                lon1=templon/len(lonlist)
+                lat1 = templat / len(latlist)
+                lon1 = templon / len(lonlist)
                 loss = ((lat1 - lat[t_i]) + (lon1 - lon[t_i])) / 2
                 lossal.append(loss)
             except:
-                er.append((timelist[t_i],i))
+                er.append((timelist[t_i], i))
                 lossal.append(-100)
 
             #
     print(tcname1)
     print(lossal)
-    plt.plot(range(len(lossal)),lossal)
+    plt.plot(range(len(lossal)), lossal)
     plt.show()

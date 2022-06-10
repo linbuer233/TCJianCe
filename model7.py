@@ -49,7 +49,7 @@ def name(path):
 
 # 处理台风经纬度，使其小数位是0，和 .25 的整数倍
 def lat_lon(lat):
-    a = round(lat, 0)
+    a = np.floor(lat)
     if ((lat - a) == 0) or ((lat - 0) <= 0.125):  # .0
         return a
     if ((lat - a) > 0.125) or ((lat - a) <= 0.375):  # .25
@@ -80,11 +80,11 @@ if __name__ == '__main__':
                             return_all_layers=False)
 
     # 确定优化器
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.002, weight_decay=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0002, weight_decay=0.001)
     # 定义损失函数
-    criterion = nn.L1Loss()
+    criterion = nn.MSELoss()
     # 训练次数
-    ethches = 20
+    ethches = 10
     # 指定设备
     device = torch.device("cpu")
     model.to(device)
@@ -138,16 +138,16 @@ if __name__ == '__main__':
                 ytrain的长度就是 <时间长度> 
                 每个时刻的中心点不一样，所以嵌套循环
                 """
-                x_train = np.zeros((batch_size, len(ytrain), channels, 21, 21))
+                x_train = np.zeros((batch_size, len(ytrain), channels, height, width))
                 for t_i in range(len(ytrain)):
                     timedate = str(timelist[t_i])[0:4] + '-' + str(timelist[t_i])[4:6] + '-' + str(timelist[t_i])[
                                                                                                6:8] + 'T' + str(
                         timelist[t_i])[8:10]
                     # 把经纬度的小数位设为 .25 整数倍
-                    latst = lat_lon(lat[t_i]) + 2.5
-                    latend = lat_lon(lat[t_i]) - 2.5
-                    lonst = lat_lon(lon[t_i]) - 2.5
-                    lonend = lat_lon(lon[t_i]) + 2.5
+                    latst = lat_lon(lat[t_i]) + (width-1)/2*0.25
+                    latend = lat_lon(lat[t_i]) - (width-1)/2*0.25
+                    lonst = lat_lon(lon[t_i]) - (width-1)/2*0.25
+                    lonend = lat_lon(lon[t_i]) + (width-1)/2*0.25
                     # 850hPa涡度
                     x_train[0, t_i, 0, :, :] = (trainds['vo'].loc[timedate,
                                                 latst:latend, lonst:lonend].data - np.nanmean(
@@ -211,11 +211,6 @@ if __name__ == '__main__':
 
                 output, _ = model(x_train)
                 y_pred = output[0].reshape(len(ytrain), height, width)
-                # y_pred = F.softmax(y_pred, dim=1).reshape(len(ytrain), height, width)
-                # y_pred = torch.where(y_pred > 0, 1, 0)
-                # y_pred=torch.FloatTensor(y_pred,device,requires_grad=True)
-                # print(y_pred[0, :, :])
-                # a = input()
                 loss = criterion(y_pred, ylabel)
                 lossal.append(loss.item())
                 if len(lossal) % 10 == 0:
