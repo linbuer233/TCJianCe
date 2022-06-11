@@ -84,7 +84,7 @@ if __name__ == '__main__':
     # 定义损失函数
     criterion = nn.MSELoss()
     # 训练次数
-    ethches = 10
+    ethches = 20
     # 指定设备
     device = torch.device("cpu")
     model.to(device)
@@ -93,11 +93,9 @@ if __name__ == '__main__':
     print(trainds)
     #
     batch_size = 1  # 样本批次
-    time_steps = 100  # 时间步长
     c2017 = name('../data/2017-2020_7-8/CH2017.csv')
     c2018 = name('../data/2017-2020_7-8/CH2018.csv')
     c2019 = name('../data/2017-2020_7-8/CH2019.csv')
-    c2020 = name('../data/2017-2020_7-8/CH2020.csv')
     trainname = [c2017, c2018, c2019]
 
     # -----------------------------训练阶段------------------------------#
@@ -116,8 +114,8 @@ if __name__ == '__main__':
                 ytrain = ytrain.reset_index(drop=True).loc[1:len(ytrain) - 2]
 
                 # 对CMA进行剔除
-                ytrain = ytrain[jiaoji(list((ytrain['经度'] > 103).values), list((ytrain['经度'] < 177).values))]
-                ytrain = ytrain[jiaoji(list((ytrain['纬度'] > -7).values), list((ytrain['纬度'] < 47).values))]
+                ytrain = ytrain[jiaoji(list((ytrain['经度'] >= 103).values), list((ytrain['经度'] <= 177).values))]
+                ytrain = ytrain[jiaoji(list((ytrain['纬度'] >= -7).values), list((ytrain['纬度'] <= 47).values))]
                 ytrain = ytrain[ytrain['强度'] > 1]
 
                 # 读取时间信息方便切割数据集
@@ -132,6 +130,7 @@ if __name__ == '__main__':
                 ylabel = torch.zeros(len(ytrain), height, width)
                 ylabel[:,:,:] = -1
                 ylabel[:, 8:13, 8:13] = 1
+                # ylabel[:, 15:20, 15:20] = 1
                 # ------------------训练集-----------------------#
                 """
                 通过台风中心点选取周围的环境场，分辨率0.25°，故选取21*21的方格的数据，范围5°*5° 500km*500km左右

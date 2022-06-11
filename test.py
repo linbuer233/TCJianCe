@@ -1,7 +1,9 @@
 import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import scipy.ndimage as spnd
 import torch
 import xarray as xr
 
@@ -89,8 +91,10 @@ if __name__ == '__main__':
     # testds = xr.open_dataset('../data/x_train.nc')
     testds = xr.open_dataset('../data/x_test.nc')
 
-    lossal=[]
-    er=[]
+    # losssum = []
+    # for loss_i in np.arange(-0.3, -0.5, -0.001):
+    lossal = []
+    er = []
     tcname1 = []
     for i in c2020:
         # -------------------ylabel---------------------#
@@ -101,8 +105,8 @@ if __name__ == '__main__':
         ytest = ytest.reset_index(drop=True).loc[1:len(ytest) - 2]
 
         # 对CMA进行剔除
-        ytest = ytest[jiaoji(list((ytest['经度'] > 103).values), list((ytest['经度'] < 177).values))]
-        ytest = ytest[jiaoji(list((ytest['纬度'] > -7).values), list((ytest['纬度'] < 47).values))]
+        ytest = ytest[jiaoji(list((ytest['经度'] >= 103).values), list((ytest['经度'] <= 177).values))]
+        ytest = ytest[jiaoji(list((ytest['纬度'] >= -7).values), list((ytest['纬度'] <= 47).values))]
         ytest = ytest[ytest['强度'] > 1]
         print("------------------------")
         # 读取时间信息方便切割数据集
@@ -117,28 +121,35 @@ if __name__ == '__main__':
         """
 
         for t_i in range(1, len(ytest), 1):
+            if t_i % 3 == 0:
+                lat1 = lat[t_i]
+                lon1 = lon[t_i]
             x_test = np.zeros((1, 1, channels, height, width))
             timedate = str(timelist[t_i])[0:4] + '-' + str(timelist[t_i])[4:6] + '-' + str(timelist[t_i])[
                                                                                        6:8] + 'T' + str(
                 timelist[t_i])[8:10]
             # 把经纬度的小数位设为 .25 整数倍
-            latst = lat_lon(lat1) + (width-1)/2*0.25
-            latend = lat_lon(lat1) - (width-1)/2*0.25
-            lonst = lat_lon(lon1) - (width-1)/2*0.25
-            lonend = lat_lon(lon1) + (width-1)/2*0.25
+            latst = lat_lon(lat1) + (width - 1) / 2 * 0.25
+            latend = lat_lon(lat1) - (width - 1) / 2 * 0.25
+            lonst = lat_lon(lon1) - (width - 1) / 2 * 0.25
+            lonend = lat_lon(lon1) + (width - 1) / 2 * 0.25
 
             # ------------------------------测试数据------------------------#
 
             # 850hPa涡度
-            x_test[0, 0, 0, :, :] = (testds['vo'].loc[timedate,
-                                     latst:latend, lonst:lonend].data - np.nanmean(
-                testds['vo'].loc[timedate,
-                latst:latend,
-                lonst:lonend].data)) / np.nanstd(testds[
-                                                     'vo'].loc[
-                                                 timedate,
-                                                 latst:latend,
-                                                 lonst:lonend].data)
+            try:
+                x_test[0, 0, 0, :, :] = (testds['vo'].loc[timedate,
+                                         latst:latend, lonst:lonend].data - np.nanmean(
+                    testds['vo'].loc[timedate,
+                    latst:latend,
+                    lonst:lonend].data)) / np.nanstd(testds[
+                                                         'vo'].loc[
+                                                     timedate,
+                                                     latst:latend,
+                                                     lonst:lonend].data)
+            except:
+                print(timelist[t_i], i, lat1, lon1)
+                a = input()
 
             # 海平面气压
             x_test[0, 0, 1, :, :] = (testds['sp'].loc[timedate,
@@ -182,10 +193,11 @@ if __name__ == '__main__':
             x_test = torch.Tensor(x_test)
 
             output, _ = model(x_test)
-            output[0] = torch.where(output[0] > -0.4, 1, 0)
+            output[0] = torch.where(output[0] > -0.456, 1, 0)
             # 根据output矩阵计算经纬度
             output = output[0].numpy().reshape((height, width))
-
+            # scipy 的腐蚀操作
+            output = spnd.binary_erosion(output).astype(output.dtype)
             # 选择为一的位置，计算出经纬度
             b = np.where(output == 1)
             #
@@ -193,24 +205,28 @@ if __name__ == '__main__':
             lonlist = b[1]
             # print(latlist, lonlist)
             templat = templon = 0
-            print(timelist[t_i],i)
             tcname1.append(i)
+
             # lat1=lat[t_i]
             # lon1=lon[t_i]
             for lat_i, lon_i in zip(latlist, lonlist):
                 templat += lat1 - 2.5 + 0.25 * lat_i
                 templon += lon1 - 2.5 + 0.25 * lon_i
             try:
-                lat1=templat/len(latlist)
-                lon1=templon/len(lonlist)
+                lat1 = templat / len(latlist)
+                lon1 = templon / len(lonlist)
                 loss = ((lat1 - lat[t_i]) + (lon1 - lon[t_i])) / 2
+                print(timelist[t_i], i, lat1, lon1)
                 lossal.append(loss)
             except:
-                er.append((timelist[t_i],i))
+                er.append((timelist[t_i], i))
                 lossal.append(-100)
 
             #
+    # losssum.append(sum(lossal))
     print(tcname1)
     print(lossal)
-    plt.plot(range(len(lossal)),lossal)
+    # plt.plot(range(len(lossal)), lossal)
+    # plt.show()
+    plt.plot(range(len(lossal)), lossal)
     plt.show()
